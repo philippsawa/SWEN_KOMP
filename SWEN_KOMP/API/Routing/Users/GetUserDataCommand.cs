@@ -15,23 +15,34 @@ namespace SWEN_KOMP.API.Routing.Users
     internal class GetUserDataCommand : IRouteCommand
     {
         private readonly IUserManager _userManager;
-        private readonly UserSchema _userSchema;
+        private readonly UserSchema _authUser;
+        private readonly string _username;
 
-        public GetUserDataCommand(IUserManager userManager, UserSchema userSchema)
+        public GetUserDataCommand(IUserManager userManager, string username, UserSchema user)
         {
             _userManager = userManager;
-            _userSchema = userSchema;
+            _authUser = user;
+            _username = username;
         }
 
         public HttpResponse Execute()
         {
             HttpResponse response;
+            Console.WriteLine(_authUser.Username);
+            Console.WriteLine(_username);
 
             try
             {
-                var userData = _userManager.GetUserData(_userSchema.Username);
+                if(_authUser.Username != _username && _authUser.Username != "admin"){
+                    throw new UserNotAuthenticatedException();
+                }
+
+                var userData = _userManager.GetUserData(_username);
                 var jsonPayload = JsonConvert.SerializeObject(userData);
                 response = new HttpResponse(StatusCode.Ok, jsonPayload);
+            }
+            catch (UserNotAuthenticatedException){
+                response = new HttpResponse(StatusCode.Unauthorized);
             }
             catch (UserNotFoundException)
             {

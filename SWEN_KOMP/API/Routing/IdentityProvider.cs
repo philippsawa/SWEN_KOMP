@@ -24,7 +24,7 @@ namespace SWEN_KOMP.API.Routing
 
             if (request.Header.TryGetValue("Authorization", out var authToken))
             {
-                const string prefix = "Bearer ";
+                const string prefix = "Basic ";
                 if (authToken.StartsWith(prefix))
                 {
                     try

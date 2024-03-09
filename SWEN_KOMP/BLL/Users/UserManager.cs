@@ -29,6 +29,7 @@ namespace SWEN_KOMP.BLL.Users
             try
             {
                 _userDao.UserInsertion(user);
+                _userDao.DataInsertion(user);
             }catch (Npgsql.PostgresException ex)
             {
                 if(ex.SqlState == "23505")
@@ -47,7 +48,7 @@ namespace SWEN_KOMP.BLL.Users
             }
         }
 
-        public UserDataSchema GetUserDataSchema(string username)
+        public UserDataSchema GetUserData(string username)
         {
             var userData = _userDao.GetUserData(username);
             if(userData == null)

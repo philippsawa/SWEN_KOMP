@@ -14,6 +14,7 @@ using SWEN_KOMP.Exceptions;
 using HttpMethod = SWEN_KOMP.HttpServer.Request.HttpMethod;
 using SWEN_KOMP.BLL.Users;
 using System.Net;
+using System.Diagnostics.CodeAnalysis;
 
 namespace SWEN_KOMP.API.Routing
 {
@@ -34,27 +35,26 @@ namespace SWEN_KOMP.API.Routing
         public IRouteCommand? Resolve(HttpRequest request)
         {
             var isMatch = (string path) => _routeParser.IsMatch(path, "/users/{id}");
-            var parseId = (string path) => int.Parse(_routeParser.ParseParameters(path, "/users/{id}")["id"]);
+            var parseId = (string path) => _routeParser.ParseParameters(path, "/users/{id}")["id"];
             var checkBody = (string? payload) => payload ?? throw new InvalidDataException();
 
             try
             {
-                return request switch
-                {
+                return request switch {
                     { Method: HttpMethod.Post, ResourcePath: "/users" } => new RegisterCommand(_userManager, Deserialize<UserSchema>(request.Payload)),
                     { Method: HttpMethod.Post, ResourcePath: "/sessions" } => new LoginCommand(_userManager, Deserialize<UserSchema>(request.Payload)),
 
-                    /* { Method: HttpMethod.Post, ResourcePath: "/messages" } => new AddMessageCommand(_messageManager, GetIdentity(request), checkBody(request.Payload)),
-                    { Method: HttpMethod.Get, ResourcePath: "/messages" } => new ListMessagesCommand(_messageManager, GetIdentity(request)),
+                    { Method: HttpMethod.Get, ResourcePath: var path } when isMatch(path) => new GetUserDataCommand(_userManager, parseId(path), GetIdentity(request)),
+                   /*  { Method: HttpMeourcePath: var path } when isMatch(path) => new UpdateMessageCommand(_messageManager, GetIdentity(request), parseId(path), checkBody(request.Payload)),
+                    { Method: HttpMethod.Deletthod.Get, ResourcePath: "/messages" } => new ListMessagesCommand(_messageManager, GetIdentity(request)),
 
                     { Method: HttpMethod.Get, ResourcePath: var path } when isMatch(path) => new ShowMessageCommand(_messageManager, GetIdentity(request), parseId(path)),
-                    { Method: HttpMethod.Put, ResourcePath: var path } when isMatch(path) => new UpdateMessageCommand(_messageManager, GetIdentity(request), parseId(path), checkBody(request.Payload)),
-                    { Method: HttpMethod.Delete, ResourcePath: var path } when isMatch(path) => new RemoveMessageCommand(_messageManager, GetIdentity(request), parseId(path)),
+                    { Method: HttpMethod.Put, Rese, ResourcePath: var path } when isMatch(path) => new RemoveMessageCommand(_messageManager, GetIdentity(request), parseId(path)),
                     */
 
 
                     _ => null
-                };
+                } ;
             }
             catch(InvalidDataException)
             {

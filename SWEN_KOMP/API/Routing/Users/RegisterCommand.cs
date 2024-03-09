@@ -30,7 +30,7 @@ namespace SWEN_KOMP.API.Routing.Users
 
             try
             {
-                _userManager.RegisterUser(_userSchema);
+                _userManager.RegisterUser(_userSchema); // -> users neuer Eintrag, userData neuer Eintrag
                 response = new HttpResponse(StatusCode.Created);
             }
             catch (DuplicateUserException)

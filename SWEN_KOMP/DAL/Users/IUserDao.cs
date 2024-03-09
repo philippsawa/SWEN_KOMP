@@ -14,7 +14,7 @@ namespace SWEN_KOMP.DAL.Users
 
         UserDataSchema? GetUserData(string username);
         UserSchema? GetUserByAuthToken(string authToken);
-
+        bool DataInsertion(UserSchema user);
 
     }
 

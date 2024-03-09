@@ -39,6 +39,7 @@ namespace SWEN_KOMP.DAL.Users
             cmd.CommandText = CreateUserDataTableCommand;
             cmd.ExecuteNonQuery();
         }
+
         public bool UserInsertion(UserSchema user)
         {
             using var connection = new NpgsqlConnection(_connectionString);
@@ -48,6 +49,18 @@ namespace SWEN_KOMP.DAL.Users
             cmd.Parameters.AddWithValue("username", user.Username);
             cmd.Parameters.AddWithValue("password", user.Password);
             cmd.Parameters.AddWithValue("sebToken", user.Token);
+            var affectedRows = cmd.ExecuteNonQuery();
+
+            return affectedRows > 0;
+        }
+
+        public bool DataInsertion(UserSchema user)
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+            connection.Open();
+
+            using var cmd = new NpgsqlCommand(InsertNewUserDataEntryCommand, connection);
+            cmd.Parameters.AddWithValue("username", user.Username);
             var affectedRows = cmd.ExecuteNonQuery();
 
             return affectedRows > 0;
