@@ -46,5 +46,18 @@ namespace SWEN_KOMP.BLL.Users
                 throw new UserNotFoundException();
             }
         }
+
+        public UserDataSchema GetUserDataSchema(string username)
+        {
+            var userData = _userDao.GetUserData(username);
+            if(userData == null)
+            {
+                throw new UserNotFoundException();
+            }
+            else
+            {
+                return userData;
+            }
+        }
     }
 }

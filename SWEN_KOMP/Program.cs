@@ -9,7 +9,7 @@ namespace SWEN_KOMP
     {
         static void Main(string[] args)
         {
-            var connectionString = "Host=localhost;Username=swen_sawa;Password=psawa123;Database=mydb";
+            var connectionString = "Host=localhost;Username=swen_sawa;Password=psawa123;Database=my_db";
 
             IUserDao userDao = new DataBaseUserDao(connectionString);
 

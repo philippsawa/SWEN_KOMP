@@ -1,4 +1,5 @@
-﻿using SWEN_KOMP.BLL.Users;
+﻿using Newtonsoft.Json;
+using SWEN_KOMP.BLL.Users;
 using SWEN_KOMP.Exceptions;
 using SWEN_KOMP.HttpServer.Response;
 using SWEN_KOMP.HttpServer.Routing;
@@ -11,12 +12,12 @@ using System.Threading.Tasks;
 
 namespace SWEN_KOMP.API.Routing.Users
 {
-    internal class LoginCommand : IRouteCommand
+    internal class GetUserDataCommand : IRouteCommand
     {
         private readonly IUserManager _userManager;
         private readonly UserSchema _userSchema;
 
-        public LoginCommand(IUserManager userManager, UserSchema userSchema)
+        public GetUserDataCommand(IUserManager userManager, UserSchema userSchema)
         {
             _userManager = userManager;
             _userSchema = userSchema;
@@ -28,12 +29,13 @@ namespace SWEN_KOMP.API.Routing.Users
 
             try
             {
-                _userManager.LoginUser(_userSchema);
-                response = new HttpResponse(StatusCode.Ok, _userSchema.Token);
+                var userData = _userManager.GetUserData(_userSchema.Username);
+                var jsonPayload = JsonConvert.SerializeObject(userData);
+                response = new HttpResponse(StatusCode.Ok, jsonPayload);
             }
             catch (UserNotFoundException)
             {
-                response = new HttpResponse(StatusCode.Conflict);
+                response = new HttpResponse(StatusCode.NotFound);
             }
 
             return response;

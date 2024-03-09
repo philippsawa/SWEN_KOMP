@@ -13,5 +13,7 @@ namespace SWEN_KOMP.BLL.Users
         void LoginUser(UserSchema user);
 
         UserSchema GetUserByAuthToken(string authToken);
+
+        UserDataSchema GetUserData(string username);
     }
 }

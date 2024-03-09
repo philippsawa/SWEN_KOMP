@@ -15,7 +15,11 @@ namespace SWEN_KOMP.DAL.Users
         private const string SelectAllUsersCommand = @"SELECT * FROM users";
         private const string SelectUserByCredentialsCommand = "SELECT * FROM users WHERE username=@username AND password=@password";
         private const string InsertUserCommand = @"INSERT INTO users(username, password, sebToken) VALUES (@username, @password, @sebToken)"; //Gegen SQL Injection - Prepared Statements
-        private const string CreateUserDataTableCommand = @"CREATE TABLE IF NOT EXISTS userData (name varchar, bio varchar, image varchar, username varchar references users(username))";
+        private const string InsertNewUserDataEntryCommand = @"INSERT INTO userData(username) VALUES (@username)";
+        private const string CreateUserDataTableCommand = @"CREATE TABLE IF NOT EXISTS userData (name varchar default NULL, bio varchar default NULL, image varchar default NULL, username varchar primary key references users(username))";
+        private const string GetUserDataCommand = @"SELECT name, bio, image FROM userData WHERE username = @Username";
+
+
 
         private readonly string _connectionString;
 
@@ -95,5 +99,28 @@ namespace SWEN_KOMP.DAL.Users
                 return reader.HasRows;
             }
         }
+
+        public UserDataSchema? GetUserData(string username)
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+            connection.Open();
+
+            using var cmd = new NpgsqlCommand(GetUserDataCommand, connection);
+            cmd.Parameters.AddWithValue("@Username", username);
+
+            using var reader = cmd.ExecuteReader();
+
+            if (reader.Read())
+            {
+                var name = reader["name"] as string ?? string.Empty;
+                var bio = reader["bio"] as string ?? string.Empty;
+                var image = reader["image"] as string ?? string.Empty;
+
+                return new UserDataSchema(name, bio, image);
+            }
+
+            return null;
+            
+        } 
     }
 }
