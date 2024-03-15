@@ -8,11 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="API\Routing\Scores\" />
     <Folder Include="API\Routing\Tournaments\" />
-    <Folder Include="BLL\Scores\" />
     <Folder Include="BLL\Tournaments\" />
-    <Folder Include="DAL\Scores\" />
     <Folder Include="DAL\Tournaments\" />
   </ItemGroup>
 

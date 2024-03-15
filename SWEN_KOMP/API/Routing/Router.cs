@@ -15,6 +15,8 @@ using HttpMethod = SWEN_KOMP.HttpServer.Request.HttpMethod;
 using SWEN_KOMP.BLL.Users;
 using System.Net;
 using System.Diagnostics.CodeAnalysis;
+using SWEN_KOMP.API.Routing.Scores;
+using SWEN_KOMP.BLL.Scores;
 
 namespace SWEN_KOMP.API.Routing
 {
@@ -23,14 +25,18 @@ namespace SWEN_KOMP.API.Routing
         private readonly IdentityProvider _identityProvider;    //Neuer Manager --> access hier
         private readonly IdRouteParser _routeParser;
         private readonly IUserManager _userManager;
+        private readonly IScoreManager _scoreManager;
 
 
-        public Router(IUserManager userManager)
+
+        public Router(IUserManager userManager, IScoreManager scoreManager)
         {
             _identityProvider = new IdentityProvider(userManager);
             _routeParser = new IdRouteParser();
             _userManager = userManager;
+            _scoreManager = scoreManager;
         }
+
 
         public IRouteCommand? Resolve(HttpRequest request)
         {
@@ -41,11 +47,12 @@ namespace SWEN_KOMP.API.Routing
             try
             {
                 return request switch {
-                    { Method: HttpMethod.Post, ResourcePath: "/users" } => new RegisterCommand(_userManager, Deserialize<UserSchema>(request.Payload)),
+                    { Method: HttpMethod.Post, ResourcePath: "/users" } => new RegisterCommand(_userManager, _scoreManager, Deserialize<UserSchema>(request.Payload)),
                     { Method: HttpMethod.Post, ResourcePath: "/sessions" } => new LoginCommand(_userManager, Deserialize<UserSchema>(request.Payload)),
 
                     { Method: HttpMethod.Get, ResourcePath: var path } when isMatch(path) => new GetUserDataCommand(_userManager, parseId(path), GetIdentity(request)),
                     { Method: HttpMethod.Put, ResourcePath: var path } when isMatch(path) => new UpdateUserDataCommand(_userManager, parseId(path), GetIdentity(request), Deserialize<UserDataSchema>(request.Payload)),
+                    { Method: HttpMethod.Get, ResourcePath: "/stats" } => new RetrieveUserStatsCommand(_scoreManager, GetIdentity(request)),
                    /*  { Method: HttpMeourcePath: var path } when isMatch(path) => new UpdateMessageCommand(_messageManager, GetIdentity(request), parseId(path), checkBody(request.Payload)),
                     { Method: HttpMethod.Deletthod.Get, ResourcePath: "/messages" } => new ListMessagesCommand(_messageManager, GetIdentity(request)),
 

@@ -1,4 +1,5 @@
 ﻿using Npgsql;
+using SWEN_KOMP.BLL.Scores;
 using SWEN_KOMP.BLL.Users;
 using SWEN_KOMP.Exceptions;
 using SWEN_KOMP.HttpServer.Response;
@@ -16,11 +17,13 @@ namespace SWEN_KOMP.API.Routing.Users
     internal class RegisterCommand : IRouteCommand
     {
         private readonly IUserManager _userManager;
+        private readonly IScoreManager _scoreManager;
         private readonly UserSchema _userSchema;
 
-        public RegisterCommand(IUserManager userManager, UserSchema userSchema)
+        public RegisterCommand(IUserManager userManager, IScoreManager scoreManager, UserSchema userSchema)
         {
             _userManager = userManager;
+            _scoreManager = scoreManager;
             _userSchema = userSchema;
         }
 
@@ -31,6 +34,7 @@ namespace SWEN_KOMP.API.Routing.Users
             try
             {
                 _userManager.RegisterUser(_userSchema); // -> users neuer Eintrag, userData neuer Eintrag
+                _scoreManager.InsertUserStats(_userSchema.Token);
                 response = new HttpResponse(StatusCode.Created);
             }
             catch (DuplicateUserException)
