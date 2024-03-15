@@ -23,6 +23,11 @@ namespace SWEN_KOMP.BLL.Scores
             _scoreDao.InsertUserStats(token);
         }
 
+        public List<UserStatsSchema> GetScoreboard()
+        {
+            return _scoreDao.GetScoreboard();
+        }
+
         public UserStatsSchema GetSpecificUserStats(string token)
         {
             var stats = _scoreDao.GetUserStatsSchema(token);

@@ -11,5 +11,7 @@ namespace SWEN_KOMP.BLL.Scores
     {
         UserStatsSchema GetSpecificUserStats(string authToken);
         void InsertUserStats(string token);
+
+        List<UserStatsSchema> GetScoreboard();
     }
 }
