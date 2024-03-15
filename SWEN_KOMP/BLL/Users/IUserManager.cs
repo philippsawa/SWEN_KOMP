@@ -11,6 +11,7 @@ namespace SWEN_KOMP.BLL.Users
     {
         void RegisterUser(UserSchema user);
         void LoginUser(UserSchema user);
+        void EditUser(UserDataSchema userData, string username);
 
         UserSchema GetUserByAuthToken(string authToken);
 

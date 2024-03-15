@@ -45,6 +45,7 @@ namespace SWEN_KOMP.API.Routing
                     { Method: HttpMethod.Post, ResourcePath: "/sessions" } => new LoginCommand(_userManager, Deserialize<UserSchema>(request.Payload)),
 
                     { Method: HttpMethod.Get, ResourcePath: var path } when isMatch(path) => new GetUserDataCommand(_userManager, parseId(path), GetIdentity(request)),
+                    { Method: HttpMethod.Put, ResourcePath: var path } when isMatch(path) => new UpdateUserDataCommand(_userManager, parseId(path), GetIdentity(request), Deserialize<UserDataSchema>(request.Payload)),
                    /*  { Method: HttpMeourcePath: var path } when isMatch(path) => new UpdateMessageCommand(_messageManager, GetIdentity(request), parseId(path), checkBody(request.Payload)),
                     { Method: HttpMethod.Deletthod.Get, ResourcePath: "/messages" } => new ListMessagesCommand(_messageManager, GetIdentity(request)),
 

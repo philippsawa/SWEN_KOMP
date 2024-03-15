@@ -17,6 +17,7 @@ namespace SWEN_KOMP.DAL.Users
         private const string InsertUserCommand = @"INSERT INTO users(username, password, sebToken) VALUES (@username, @password, @sebToken)"; //Gegen SQL Injection - Prepared Statements
         private const string InsertNewUserDataEntryCommand = @"INSERT INTO userData(username) VALUES (@username)";
         private const string CreateUserDataTableCommand = @"CREATE TABLE IF NOT EXISTS userData (name varchar default NULL, bio varchar default NULL, image varchar default NULL, username varchar primary key references users(username))";
+        private const string EditUserDataTableCommand = @"UPDATE userData SET name = @name, bio = @bio, image = @image WHERE username = @username";
         private const string GetUserDataCommand = @"SELECT name, bio, image FROM userData WHERE username = @Username";
 
 
@@ -88,6 +89,21 @@ namespace SWEN_KOMP.DAL.Users
             }
 
             return users;
+        }
+
+        public bool EditUserData(UserDataSchema userData, string username)
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+            connection.Open();
+
+            using var cmd = new NpgsqlCommand(EditUserDataTableCommand, connection);
+            cmd.Parameters.AddWithValue("name", userData.Name);
+            cmd.Parameters.AddWithValue("bio", userData.Bio);
+            cmd.Parameters.AddWithValue("image", userData.Image);
+            cmd.Parameters.AddWithValue("username", username); 
+
+            int affectedRows = cmd.ExecuteNonQuery();
+            return affectedRows > 0;
         }
 
         private UserSchema ReadUser(IDataRecord record)

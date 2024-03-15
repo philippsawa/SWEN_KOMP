@@ -39,6 +39,14 @@ namespace SWEN_KOMP.BLL.Users
             }
         }
 
+        public void EditUser(UserDataSchema userData, string username)
+        {
+            if (!_userDao.EditUserData(userData, username))
+            {
+                throw new UserNotFoundException();
+            }
+        }
+
         public void LoginUser(UserSchema user)
         {
 
