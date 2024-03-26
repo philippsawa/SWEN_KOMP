@@ -10,11 +10,13 @@ namespace SWEN_KOMP.Models.Schemas
     {
         public int Count { get; set; }
         public int Duration { get; set; }
+        public string Username { get; set; }
 
-        public HistorySchema(int count, int duration)
+        public HistorySchema(int count, int duration, string username)
         {
             Count = count;
             Duration = duration;
+            Username = username;
         }
     }
 }

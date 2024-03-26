@@ -10,5 +10,7 @@ namespace SWEN_KOMP.DAL.Tournaments
     internal interface ITournamentDao
     {
         List<HistorySchema> RetrieveHistory(string username);
+        string? GetActiveTournament(string username);
+        List<HistorySchema> RetrieveTournament(string tournamentName);
     }
 }
