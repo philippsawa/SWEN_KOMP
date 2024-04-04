@@ -76,7 +76,7 @@ namespace SWEN_KOMP.DAL.Tournaments
             return tournamentName;
         }
 
-        public List<HistorySchema> RetrieveTournament(string tournamentName)
+        public List<HistorySchema> RetrieveTournament(string tournamentName) // gibt alle history entries vom bestimmten turnier zurück
         {
             List<HistorySchema> result = new List<HistorySchema>();
 
@@ -100,5 +100,7 @@ namespace SWEN_KOMP.DAL.Tournaments
 
             return result;
         }
+
+
     }
 }

@@ -10,5 +10,6 @@ namespace SWEN_KOMP.BLL.Tournaments
     internal interface ITournamentManager
     {
         List<HistorySchema> GetHistory(string username);
+        TournamentInfoSchema GetTournamentInfo(string username);
     }
 }
