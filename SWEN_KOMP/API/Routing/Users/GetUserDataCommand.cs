@@ -28,8 +28,6 @@ namespace SWEN_KOMP.API.Routing.Users
         public HttpResponse Execute()
         {
             HttpResponse response;
-            Console.WriteLine(_authUser.Username);
-            Console.WriteLine(_username);
 
             try
             {

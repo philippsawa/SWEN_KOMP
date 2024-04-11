@@ -14,6 +14,9 @@ namespace SWEN_KOMP.DAL.Tournaments
         private readonly string SelectHistoryByUsername = @"SELECT * FROM history WHERE username=@username";
         private readonly string SelectHistoryInActiveTournamentCommand = @"SELECT * FROM history WHERE username=@username AND tournament_name IS NOT NULL";
         private readonly string SelectHistoryByTournamentNameCommand = @"SELECT * FROM history WHERE tournament_name=@tournamentName";
+        private readonly string InsertHistoryEntryCommand = @"INSERT INTO history (count, duration, username, tournament_name) VALUES(@count, @duration, @username, @t_name)";
+        private readonly string DeleteTournamentNameCommand = @"UPDATE history SET tournament_name = NULL WHERE tournament_name = @name";
+        private readonly string ResetTableEntriesToNullTournamentCommand = @"UPDATE history SET tournament_name = NULL";
 
         private readonly string _connectionString;
 
@@ -29,6 +32,9 @@ namespace SWEN_KOMP.DAL.Tournaments
             using var connection = new NpgsqlConnection(_connectionString);
             connection.Open();
             using var cmd = new NpgsqlCommand(CreateHistoryTable, connection);
+            cmd.ExecuteNonQuery();
+
+            cmd.CommandText = ResetTableEntriesToNullTournamentCommand; // maybe von crash übergebliebene indefinite turniere -> hiermit sicherheitshalber entfernen
             cmd.ExecuteNonQuery();
         }
 
@@ -101,6 +107,30 @@ namespace SWEN_KOMP.DAL.Tournaments
             return result;
         }
 
+        public void AddHistoryEntry(HistorySchema entry, string tournamentName)
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+            connection.Open();
 
+            using var cmd = new NpgsqlCommand(InsertHistoryEntryCommand, connection);
+
+            cmd.Parameters.AddWithValue("count", entry.Count);
+            cmd.Parameters.AddWithValue("duration", entry.Duration);
+            cmd.Parameters.AddWithValue("username", entry.Username);
+            cmd.Parameters.AddWithValue("t_name", tournamentName);
+
+            cmd.ExecuteNonQuery();
+        }
+
+        public void DeleteTournamentName(string tournamentName)
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+            connection.Open();
+
+            using var cmd = new NpgsqlCommand(DeleteTournamentNameCommand, connection);
+            cmd.Parameters.AddWithValue("name", tournamentName);
+
+            cmd.ExecuteNonQuery();
+        }
     }
 }

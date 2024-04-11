@@ -12,5 +12,7 @@ namespace SWEN_KOMP.DAL.Tournaments
         List<HistorySchema> RetrieveHistory(string username);
         string? GetActiveTournament(string username);
         List<HistorySchema> RetrieveTournament(string tournamentName);
+        void AddHistoryEntry(HistorySchema entry, string tournamentName);
+        void DeleteTournamentName(string tournamentName);
     }
 }

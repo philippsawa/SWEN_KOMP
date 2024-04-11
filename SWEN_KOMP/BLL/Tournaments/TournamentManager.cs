@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections.Concurrent;
 
 namespace SWEN_KOMP.BLL.Tournaments
 {
@@ -14,9 +15,52 @@ namespace SWEN_KOMP.BLL.Tournaments
     {
         private readonly ITournamentDao _tournamentDao;
 
+        private ConcurrentDictionary<string, Timer> _tournamentTimers = new ConcurrentDictionary<string, Timer>();
+
         public TournamentManager(ITournamentDao tournamentDao)
         {
             _tournamentDao = tournamentDao;
+        }
+
+        public void StartTournament(HistorySchema entry, string tournamentId)
+        {
+            if (string.IsNullOrWhiteSpace(tournamentId))
+            {
+                Console.WriteLine("Tournament ID cannot be null or empty.");
+                throw new ArgumentException("Tournament ID cannot be null or empty.", nameof(tournamentId));
+            }
+
+            if (_tournamentTimers.ContainsKey(tournamentId))
+            {
+                _tournamentDao.AddHistoryEntry(entry, tournamentId);
+            }
+            else
+            {
+                var timer = new Timer(TournamentTimerCallback, tournamentId, 10000, Timeout.Infinite);
+                if (_tournamentTimers.TryAdd(tournamentId, timer))
+                {
+                    Console.WriteLine($"Tournament {tournamentId} started.");
+                    _tournamentDao.AddHistoryEntry(entry, tournamentId);
+                }
+                else
+                {
+                    Console.WriteLine($"Failed to start tournament {tournamentId}. Please try again.");
+                    throw new NoTournamentException();
+                }
+            }
+        }
+        private void TournamentTimerCallback(object state)
+        {
+            var tournamentId = (string)state;
+            Console.WriteLine($"Tournament {tournamentId} has ended.");
+
+            if (_tournamentTimers.TryRemove(tournamentId, out var timer))
+            {
+                timer.Dispose();
+                // ELO UPDATE EVERY PARTICIPANTS USER 
+                _tournamentDao.DeleteTournamentName(tournamentId);
+                Console.WriteLine($"Tournament {tournamentId} cleaned up.");
+            }
         }
 
         public List<HistorySchema> GetHistory(string username)
@@ -31,20 +75,11 @@ namespace SWEN_KOMP.BLL.Tournaments
             return history;
         }
 
-        public TournamentInfoSchema GetTournamentInfo(string username)
+        public List<HistorySchema> RetrieveSummedUpUserEntriesInTournament(string tournamentId)
         {
-            string? tournamentName = _tournamentDao.GetActiveTournament(username);
-
-            if(tournamentName == null)
-            {
-                throw new NoTournamentException();
-            }
-
-            List<HistorySchema> historyEntries = _tournamentDao.RetrieveTournament(tournamentName);
+            List<HistorySchema> historyEntries = _tournamentDao.RetrieveTournament(tournamentId);
             List<HistorySchema> summedUpUserEntries = new List<HistorySchema>();
             List<string> usersChecked = new List<string>();
-
-            HistorySchema? userWithHighestCount = null;
 
             foreach (var entry in historyEntries)
             {
@@ -66,15 +101,34 @@ namespace SWEN_KOMP.BLL.Tournaments
 
                     HistorySchema summedEntry = new HistorySchema(totalCount, totalDuration, entry.Username);
                     summedUpUserEntries.Add(summedEntry);
-
-                    if (userWithHighestCount == null || totalCount > userWithHighestCount.Count)
-                    {
-                        userWithHighestCount = summedEntry;
-                    }
                 }
             }
 
-            int participantCount = usersChecked.Count;
+            return summedUpUserEntries;
+        } 
+
+        public TournamentInfoSchema GetTournamentInfo(string username)
+        {
+            string? tournamentName = _tournamentDao.GetActiveTournament(username);
+
+            if(tournamentName == null)
+            {
+                throw new NoTournamentException();
+            }
+
+            List<HistorySchema> summedUpEntries = RetrieveSummedUpUserEntriesInTournament(tournamentName);
+
+            HistorySchema? userWithHighestCount = null;
+
+            foreach (var entry in summedUpEntries)
+            {
+                if (userWithHighestCount == null || entry.Count > userWithHighestCount.Count)
+                {
+                    userWithHighestCount = entry;
+                }
+            }
+
+            int participantCount = summedUpEntries.Count;
             string leaderUsername = userWithHighestCount != null ? userWithHighestCount.Username : "";
 
             return new TournamentInfoSchema(participantCount, leaderUsername, 60); // STARTTIME UMÄNDERN VON HARDCODE AUF DYNAMIC !!!! 

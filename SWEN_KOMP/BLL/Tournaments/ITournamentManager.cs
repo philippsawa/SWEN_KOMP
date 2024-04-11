@@ -11,5 +11,6 @@ namespace SWEN_KOMP.BLL.Tournaments
     {
         List<HistorySchema> GetHistory(string username);
         TournamentInfoSchema GetTournamentInfo(string username);
+        void StartTournament(HistorySchema entry, string tournamentId);
     }
 }

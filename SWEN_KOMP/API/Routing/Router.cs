@@ -60,7 +60,9 @@ namespace SWEN_KOMP.API.Routing
 
                     { Method: HttpMethod.Get, ResourcePath: "/history" } => new RetrieveUserHistoryCommand(_tournamentManager, GetIdentity(request)),
                     { Method: HttpMethod.Get, ResourcePath: "/tournament" } => new ListCurrentTournamentInfoCommand(_tournamentManager, GetIdentity(request)),
-                   /*  { Method: HttpMeourcePath: var path } when isMatch(path) => new UpdateMessageCommand(_messageManager, GetIdentity(request), parseId(path), checkBody(request.Payload)),
+                    { Method: HttpMethod.Post, ResourcePath: "/history" } => new AddHistoryEntryCommand(_tournamentManager, GetIdentity(request), Deserialize<HistoryPayloadSchema>(request.Payload)),
+                   
+                    /*  { Method: HttpMeourcePath: var path } when isMatch(path) => new UpdateMessageCommand(_messageManager, GetIdentity(request), parseId(path), checkBody(request.Payload)),
                     { Method: HttpMethod.Deletthod.Get, ResourcePath: "/messages" } => new ListMessagesCommand(_messageManager, GetIdentity(request)),
 
                     { Method: HttpMethod.Get, ResourcePath: var path } when isMatch(path) => new ShowMessageCommand(_messageManager, GetIdentity(request), parseId(path)),
