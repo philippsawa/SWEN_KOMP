@@ -34,7 +34,7 @@ namespace SWEN_KOMP.DAL.Tournaments
             using var cmd = new NpgsqlCommand(CreateHistoryTable, connection);
             cmd.ExecuteNonQuery();
 
-            cmd.CommandText = ResetTableEntriesToNullTournamentCommand; // maybe von crash übergebliebene indefinite turniere -> hiermit sicherheitshalber entfernen
+            cmd.CommandText = ResetTableEntriesToNullTournamentCommand; // maybe von crash "übergebliebene" turniere -> hiermit sicherheitshalber entfernen
             cmd.ExecuteNonQuery();
         }
 

@@ -39,5 +39,19 @@ namespace SWEN_KOMP.BLL.Scores
 
             return stats;
         }
+
+        public void AddElo(int amount, string authToken)
+        {
+            _scoreDao.AddElo(amount, authToken);
+
+        }
+        public void SubtractElo(string authToken)
+        {
+            _scoreDao.SubtractElo(authToken);
+        }
+        public void AddPushUpCount(int amount, string authToken)
+        {
+            _scoreDao.AddPushUpCount(amount, authToken);
+        }
     }
 }

@@ -32,7 +32,6 @@ namespace SWEN_KOMP.DAL.Users
 
         private void EnsureTables()
         {
-            // TODO: handle exceptions
             using var connection = new NpgsqlConnection(_connectionString);
             connection.Open();
             using var cmd = new NpgsqlCommand(CreateUserTableCommand, connection);
@@ -74,7 +73,6 @@ namespace SWEN_KOMP.DAL.Users
 
         private IEnumerable<UserSchema> GetAllUsers()
         {
-            // TODO: handle exceptions
             var users = new List<UserSchema>();
 
             using var connection = new NpgsqlConnection(_connectionString);

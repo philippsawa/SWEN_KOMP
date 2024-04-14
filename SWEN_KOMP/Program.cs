@@ -21,7 +21,7 @@ namespace SWEN_KOMP
 
             IUserManager userManager = new UserManager(userDao);
             IScoreManager scoreManager = new ScoreManager(scoreDao);
-            ITournamentManager tournamentManager = new TournamentManager(tournamentDao);
+            ITournamentManager tournamentManager = new TournamentManager(tournamentDao, scoreManager);
 
             var router = new Router(userManager, scoreManager, tournamentManager);
             var server = new HttpServer.HttpServer(router, IPAddress.Any, 10001);

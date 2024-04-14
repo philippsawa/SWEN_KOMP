@@ -16,6 +16,9 @@ namespace SWEN_KOMP.DAL.Scores
         private const string GetUserStatsCommand = @"SELECT stats.*, userData.name FROM stats JOIN users ON stats.authToken = users.sebToken JOIN userData ON users.username = userData.username WHERE stats.authToken = @authToken";
         private const string InsertUserStatsCommand = @"INSERT INTO stats(authToken) VALUES (@authToken)";
         private const string GetAllUserStatsCommand = @"SELECT stats.*, userData.name FROM stats JOIN users ON stats.authToken = users.sebToken JOIN userData ON users.username = userData.username ORDER BY stats.Elo desc";
+        private const string AddEloCommand = @"UPDATE stats SET Elo = Elo + @amount WHERE authToken = @authToken";
+        private const string SubtractEloCommand = @"UPDATE stats SET Elo = Elo - 1 WHERE authToken = @authToken";
+        private const string AddPushUpCountCommand = @"UPDATE stats SET pushUpCount = pushUpCount + @amount WHERE authToken = @authToken";
 
 
         private readonly string _connectionString;
@@ -28,7 +31,6 @@ namespace SWEN_KOMP.DAL.Scores
 
         private void EnsureTables()
         {
-            // TODO: handle exceptions
             using var connection = new NpgsqlConnection(_connectionString);
             connection.Open();
             using var cmd = new NpgsqlCommand(CreateUserStatsTableCommand, connection);
@@ -57,6 +59,34 @@ namespace SWEN_KOMP.DAL.Scores
             return scoreboard;
         }
 
+        public void AddElo(int amount, string authToken)
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+            connection.Open();
+            using var cmd = new NpgsqlCommand(AddEloCommand, connection);
+            cmd.Parameters.AddWithValue("amount", amount);
+            cmd.Parameters.AddWithValue("authToken", authToken);
+            cmd.ExecuteNonQuery();
+        }
+
+        public void SubtractElo(string authToken)
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+            connection.Open();
+            using var cmd = new NpgsqlCommand(SubtractEloCommand, connection);
+            cmd.Parameters.AddWithValue("authToken", authToken);
+            cmd.ExecuteNonQuery();
+        }
+
+        public void AddPushUpCount(int amount, string authToken)
+        {
+            using var connection = new NpgsqlConnection(_connectionString);
+            connection.Open();
+            using var cmd = new NpgsqlCommand(AddPushUpCountCommand, connection);
+            cmd.Parameters.AddWithValue("amount", amount);
+            cmd.Parameters.AddWithValue("authToken", authToken);
+            cmd.ExecuteNonQuery();
+        }
 
         public void InsertUserStats(string token)
         {
@@ -83,7 +113,7 @@ namespace SWEN_KOMP.DAL.Scores
                 var pushUpCount = reader["pushUpCount"] as int? ?? 0; //Wenn NULL --> automatisch auf 0
                 var Elo = reader["Elo"] as int? ?? 0; 
 
-                return new UserStatsSchema(name, pushUpCount, Elo);
+                return new UserStatsSchema(name, Elo, pushUpCount);
             }
 
             return null;

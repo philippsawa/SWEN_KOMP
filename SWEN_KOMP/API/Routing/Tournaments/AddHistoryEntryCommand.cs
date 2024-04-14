@@ -1,4 +1,5 @@
-﻿using SWEN_KOMP.BLL.Tournaments;
+﻿using SWEN_KOMP.BLL.Scores;
+using SWEN_KOMP.BLL.Tournaments;
 using SWEN_KOMP.HttpServer.Response;
 using SWEN_KOMP.HttpServer.Routing;
 using SWEN_KOMP.Models.Schemas;
@@ -13,12 +14,14 @@ namespace SWEN_KOMP.API.Routing.Tournaments
     internal class AddHistoryEntryCommand : IRouteCommand
     {
         private readonly ITournamentManager _tournamentManager;
+        private readonly IScoreManager _scoreManager;
         private readonly UserSchema _userSchema;
         private readonly HistoryPayloadSchema _historyPayloadSchema;
 
-        public AddHistoryEntryCommand(ITournamentManager tournamentManager, UserSchema userSchema, HistoryPayloadSchema historyPayloadSchema)
+        public AddHistoryEntryCommand(ITournamentManager tournamentManager, IScoreManager scoreManager, UserSchema userSchema, HistoryPayloadSchema historyPayloadSchema)
         {
             _tournamentManager = tournamentManager;
+            _scoreManager = scoreManager;
             _userSchema = userSchema;
             _historyPayloadSchema = historyPayloadSchema;
         }
@@ -30,6 +33,7 @@ namespace SWEN_KOMP.API.Routing.Tournaments
             try
             {
                 _tournamentManager.StartTournament(new HistorySchema(_historyPayloadSchema.Count, _historyPayloadSchema.DurationInSeconds, _userSchema.Username), _historyPayloadSchema.Name);
+                _scoreManager.AddPushUpCount(_historyPayloadSchema.Count, _userSchema.Token);
                 response = new HttpResponse(StatusCode.Ok);
             } catch(Exception ex)
             {

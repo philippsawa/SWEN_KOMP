@@ -26,7 +26,7 @@ namespace SWEN_KOMP.API.Routing.Scores
         {
             HttpResponse response;
 
-           List<UserStatsSchema> scoreboard = _scoreManager.GetScoreboard();
+            List<UserStatsSchema> scoreboard = _scoreManager.GetScoreboard();
             var jsonPayload = JsonConvert.SerializeObject(scoreboard);
             response = new HttpResponse(StatusCode.Ok, jsonPayload);
 

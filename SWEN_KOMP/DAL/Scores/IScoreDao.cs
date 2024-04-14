@@ -12,5 +12,8 @@ namespace SWEN_KOMP.DAL.Scores
         UserStatsSchema? GetUserStatsSchema(string sebToken);
         void InsertUserStats(string token);
         List<UserStatsSchema> GetScoreboard();
+        void AddElo(int amount, string authToken);
+        void SubtractElo(string authToken);
+        void AddPushUpCount(int amount, string authToken);
     }
 }

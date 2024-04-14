@@ -34,7 +34,7 @@ namespace SWEN_KOMP.HttpServer
             {
                 var client = _listener.AcceptTcpClient();
                 var clientHandler = new HttpClientHandler(client);
-                HandleClient(clientHandler);
+                Task.Run(() => HandleClient(clientHandler));
             }
         }
 

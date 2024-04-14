@@ -8,18 +8,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using SWEN_KOMP.BLL.Scores;
 
 namespace SWEN_KOMP.BLL.Tournaments
 {
     internal class TournamentManager : ITournamentManager
     {
         private readonly ITournamentDao _tournamentDao;
+        private readonly IScoreManager _scoreManager;
 
         private ConcurrentDictionary<string, Timer> _tournamentTimers = new ConcurrentDictionary<string, Timer>();
 
-        public TournamentManager(ITournamentDao tournamentDao)
+        public TournamentManager(ITournamentDao tournamentDao, IScoreManager scoreManager)
         {
             _tournamentDao = tournamentDao;
+            _scoreManager = scoreManager;
         }
 
         public void StartTournament(HistorySchema entry, string tournamentId)
@@ -52,14 +55,70 @@ namespace SWEN_KOMP.BLL.Tournaments
         private void TournamentTimerCallback(object state)
         {
             var tournamentId = (string)state;
-            Console.WriteLine($"Tournament {tournamentId} has ended.");
 
             if (_tournamentTimers.TryRemove(tournamentId, out var timer))
             {
                 timer.Dispose();
-                // ELO UPDATE EVERY PARTICIPANTS USER 
+                ProcessUsersInTournament(tournamentId); // +-elo
                 _tournamentDao.DeleteTournamentName(tournamentId);
-                Console.WriteLine($"Tournament {tournamentId} cleaned up.");
+            }
+
+            Console.WriteLine($"Tournament {tournamentId} has ended.");
+        }
+
+        private void ProcessUsersInTournament(string tournamentId)
+        {
+            var summedUpUserEntries = RetrieveSummedUpUserEntriesInTournament(tournamentId);
+            if (summedUpUserEntries.Count == 0) return;
+            List<HistorySchema> topUsers = new List<HistorySchema>();
+
+            topUsers.Add(summedUpUserEntries[0]);
+
+            for (int i = 1; i < summedUpUserEntries.Count; i++)
+            {
+                var currentUser = summedUpUserEntries[i];
+
+                if (currentUser.Count > topUsers[0].Count)
+                {
+                    // wenn höher -> liste clearen und neuen user als highest speichern
+                    topUsers.Clear();
+                    topUsers.Add(currentUser);
+                }
+                else if (currentUser.Count == topUsers[0].Count)
+                {
+                    // wenn gleicher score -> beide in liste
+                    topUsers.Add(currentUser);
+                }
+            }
+
+            var otherUsers = summedUpUserEntries.Except(topUsers).ToList();
+
+            if (topUsers.Count == 1)
+            {
+                // 1 gewinner
+                Console.WriteLine($"Winner: {topUsers[0].Username} with count: {topUsers[0].Count}");
+                _scoreManager.AddElo(2, topUsers[0].Username + "-sebToken");
+            }
+            else
+            {
+                // >1 gewinner
+                Console.WriteLine("Multiple winners with equal counts:");
+                foreach (var user in topUsers)
+                {
+                    Console.WriteLine($"{user.Username} with count: {user.Count}");
+                    _scoreManager.AddElo(1, user.Username + "-sebToken");
+                }
+            }
+
+            // alle anderen user (verlierer)
+            if (otherUsers.Any())
+            {
+                Console.WriteLine("Loser(s):");
+                foreach (var user in otherUsers)
+                {
+                    Console.WriteLine($"{user.Username} with count: {user.Count}");
+                    _scoreManager.SubtractElo(user.Username + "-sebToken");
+                }
             }
         }
 

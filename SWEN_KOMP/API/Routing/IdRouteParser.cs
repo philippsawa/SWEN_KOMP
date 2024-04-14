@@ -17,7 +17,7 @@ namespace SWEN_KOMP.API.Routing
 
         public Dictionary<string, string> ParseParameters(string resourcePath, string routePattern)
         {
-            // query parameters
+            // query parameter
             var parameters = ParseQueryParameters(resourcePath);
 
             // id parameter

@@ -43,8 +43,10 @@ namespace SWEN_KOMP.API.Routing
 
         public IRouteCommand? Resolve(HttpRequest request)
         {
-            var isMatch = (string path) => _routeParser.IsMatch(path, "/users/{id}");
-            var parseId = (string path) => _routeParser.ParseParameters(path, "/users/{id}")["id"];
+            var isUsersMatch = (string path) => _routeParser.IsMatch(path, "/users/{id}");
+            var isStatsMatch = (string path) => _routeParser.IsMatch(path, "/stats/{id}");
+            var parseUsersId = (string path) => _routeParser.ParseParameters(path, "/users/{id}")["id"];
+            var parseStatsId = (string path) => _routeParser.ParseParameters(path, "/stats/{id}")["id"];
             var checkBody = (string? payload) => payload ?? throw new InvalidDataException();
 
             try
@@ -52,15 +54,17 @@ namespace SWEN_KOMP.API.Routing
                 return request switch {
                     { Method: HttpMethod.Post, ResourcePath: "/users" } => new RegisterCommand(_userManager, _scoreManager, Deserialize<UserSchema>(request.Payload)),
                     { Method: HttpMethod.Post, ResourcePath: "/sessions" } => new LoginCommand(_userManager, Deserialize<UserSchema>(request.Payload)),
+                    { Method: HttpMethod.Get, ResourcePath: var path } when isUsersMatch(path) => new GetUserDataCommand(_userManager, parseUsersId(path), GetIdentity(request)),
+                    { Method: HttpMethod.Put, ResourcePath: var path } when isUsersMatch(path) => new UpdateUserDataCommand(_userManager, parseUsersId(path), GetIdentity(request), Deserialize<UserDataSchema>(request.Payload)),
 
-                    { Method: HttpMethod.Get, ResourcePath: var path } when isMatch(path) => new GetUserDataCommand(_userManager, parseId(path), GetIdentity(request)),
-                    { Method: HttpMethod.Put, ResourcePath: var path } when isMatch(path) => new UpdateUserDataCommand(_userManager, parseId(path), GetIdentity(request), Deserialize<UserDataSchema>(request.Payload)),
                     { Method: HttpMethod.Get, ResourcePath: "/stats" } => new RetrieveUserStatsCommand(_scoreManager, GetIdentity(request)),
                     { Method: HttpMethod.Get, ResourcePath: "/score" } => new RetrieveScoreBoardCommand(_scoreManager, GetIdentity(request)),
+                    { Method: HttpMethod.Post, ResourcePath: var path } when isStatsMatch(path) => new AddEloToUserCommand(_scoreManager, parseStatsId(path), GetIdentity(request), Deserialize<EloCheatSchema>(request.Payload)),
+                    // UNIQUE FEATURE -> ADD ELO TO USER POST /stats/{username} !!! ONLY ADMIN
 
                     { Method: HttpMethod.Get, ResourcePath: "/history" } => new RetrieveUserHistoryCommand(_tournamentManager, GetIdentity(request)),
                     { Method: HttpMethod.Get, ResourcePath: "/tournament" } => new ListCurrentTournamentInfoCommand(_tournamentManager, GetIdentity(request)),
-                    { Method: HttpMethod.Post, ResourcePath: "/history" } => new AddHistoryEntryCommand(_tournamentManager, GetIdentity(request), Deserialize<HistoryPayloadSchema>(request.Payload)),
+                    { Method: HttpMethod.Post, ResourcePath: "/history" } => new AddHistoryEntryCommand(_tournamentManager, _scoreManager, GetIdentity(request), Deserialize<HistoryPayloadSchema>(request.Payload)),
                    
                     /*  { Method: HttpMeourcePath: var path } when isMatch(path) => new UpdateMessageCommand(_messageManager, GetIdentity(request), parseId(path), checkBody(request.Payload)),
                     { Method: HttpMethod.Deletthod.Get, ResourcePath: "/messages" } => new ListMessagesCommand(_messageManager, GetIdentity(request)),
