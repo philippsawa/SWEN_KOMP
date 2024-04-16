@@ -28,7 +28,10 @@ namespace SWEN_KOMP.BLL.Users
         {
             try
             {
-                _userDao.UserInsertion(user);
+                if (!_userDao.UserInsertion(user))
+                {
+                    throw new DuplicateUserException();
+                }
                 _userDao.DataInsertion(user);
             }catch (Npgsql.PostgresException ex)
             {
