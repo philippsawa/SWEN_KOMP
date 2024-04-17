@@ -16,105 +16,133 @@ namespace SWEN_KOMP.BLL.Tournaments
     {
         private readonly ITournamentDao _tournamentDao;
         private readonly IScoreManager _scoreManager;
+
+        //private ConcurrentDictionary<string, Timer> _tournamentTimers = new ConcurrentDictionary<string, Timer>();
         private ConcurrentDictionary<string, TournamentSchema> _tournamentTimers = new ConcurrentDictionary<string, TournamentSchema>();
 
-        // konstruktor init
         public TournamentManager(ITournamentDao tournamentDao, IScoreManager scoreManager)
         {
             _tournamentDao = tournamentDao;
             _scoreManager = scoreManager;
         }
 
-        // startet ein turnier und legt timer für ablauf fest
+        // started turnier+timer
         public void StartTournament(HistorySchema entry, string tournamentId)
         {
             if (string.IsNullOrWhiteSpace(tournamentId))
             {
+                Console.WriteLine("Tournament ID cannot be null or empty.");
                 throw new ArgumentException("Tournament ID cannot be null or empty.", nameof(tournamentId));
             }
 
-            if (_tournamentTimers.ContainsKey(tournamentId))
+            if (_tournamentTimers.ContainsKey(tournamentId)) // check ob turnier bereits läuft
             {
                 _tournamentDao.AddHistoryEntry(entry, tournamentId);
             }
             else
             {
                 var timer = new Timer(TournamentTimerCallback, tournamentId, 10000, Timeout.Infinite);
-                if (_tournamentTimers.TryAdd(tournamentId, new TournamentSchema(timer)))
+
+                if (_tournamentTimers.TryAdd(tournamentId, new TournamentSchema(timer))) //turnierstart + history entry
                 {
+                    Console.WriteLine($"Tournament {tournamentId} started.");
                     _tournamentDao.AddHistoryEntry(entry, tournamentId);
                 }
                 else
                 {
+                    Console.WriteLine($"Failed to start tournament {tournamentId}. Please try again.");
                     throw new NoTournamentException();
                 }
             }
         }
 
-        // callback funktion für timer nach ablauf von turnier timer
+        // callback funktion für timer (wenn turnier endet)
         private void TournamentTimerCallback(object state)
         {
             var tournamentId = (string)state;
+
             if (_tournamentTimers.TryRemove(tournamentId, out var tournament))
             {
                 tournament.Countdown.Dispose();
                 ProcessUsersInTournament(tournamentId); // +-elo
                 _tournamentDao.DeleteTournamentName(tournamentId);
             }
+
+            Console.WriteLine($"Tournament {tournamentId} has ended.");
         }
 
-        // processed turnierteilnehmer wenn turnier fertig ist
+
+        // platzierung von teilnehmern nach turnier verarbeiten
         private void ProcessUsersInTournament(string tournamentId)
         {
             var summedUpUserEntries = RetrieveSummedUpUserEntriesInTournament(tournamentId);
             if (summedUpUserEntries.Count == 0) return;
-
             List<HistorySchema> topUsers = new List<HistorySchema>();
+
             topUsers.Add(summedUpUserEntries[0]);
+
             for (int i = 1; i < summedUpUserEntries.Count; i++)
             {
                 var currentUser = summedUpUserEntries[i];
+
                 if (currentUser.Count > topUsers[0].Count)
                 {
+                    // wenn höher -> liste clearen und neuen user als highest speichern
                     topUsers.Clear();
                     topUsers.Add(currentUser);
                 }
                 else if (currentUser.Count == topUsers[0].Count)
                 {
+                    // wenn gleicher score -> beide in liste
                     topUsers.Add(currentUser);
                 }
             }
 
             var otherUsers = summedUpUserEntries.Except(topUsers).ToList();
+
             if (topUsers.Count == 1)
             {
+                // 1 gewinner
+                Console.WriteLine($"Winner: {topUsers[0].Username} with count: {topUsers[0].Count}");
                 _scoreManager.AddElo(2, topUsers[0].Username + "-sebToken");
             }
             else
             {
+                // >1 gewinner
+                Console.WriteLine("Multiple winners with equal counts:");
                 foreach (var user in topUsers)
                 {
+                    Console.WriteLine($"{user.Username} with count: {user.Count}");
                     _scoreManager.AddElo(1, user.Username + "-sebToken");
                 }
             }
-            foreach (var user in otherUsers)
+
+            // alle anderen user (verlierer)
+            if (otherUsers.Any())
             {
-                _scoreManager.SubtractElo(user.Username + "-sebToken");
+                Console.WriteLine("Loser(s):");
+                foreach (var user in otherUsers)
+                {
+                    Console.WriteLine($"{user.Username} with count: {user.Count}");
+                    _scoreManager.SubtractElo(user.Username + "-sebToken");
+                }
             }
         }
 
-        // Rruft alle einträge für einen user ab
+        // history eines bestimmten users retrieven
         public List<HistorySchema> GetHistory(string username)
         {
             List<HistorySchema> history = _tournamentDao.RetrieveHistory(username);
+
             if (history.Count == 0)
             {
                 throw new EmptyHistoryException();
             }
+
             return history;
         }
 
-        // added turnier entries für alle teilnehmer in 1 turnier
+        // ruft alle entries in einem tournament für einen user auf
         public List<HistorySchema> RetrieveSummedUpUserEntriesInTournament(string tournamentId)
         {
             List<HistorySchema> historyEntries = _tournamentDao.RetrieveTournament(tournamentId);
@@ -126,8 +154,10 @@ namespace SWEN_KOMP.BLL.Tournaments
                 if (!usersChecked.Contains(entry.Username))
                 {
                     usersChecked.Add(entry.Username);
+
                     int totalDuration = 0;
                     int totalCount = 0;
+
                     foreach (var innerEntry in historyEntries)
                     {
                         if (innerEntry.Username == entry.Username)
@@ -136,23 +166,31 @@ namespace SWEN_KOMP.BLL.Tournaments
                             totalDuration += innerEntry.Duration;
                         }
                     }
+
                     HistorySchema summedEntry = new HistorySchema(totalCount, totalDuration, entry.Username);
                     summedUpUserEntries.Add(summedEntry);
                 }
             }
+
             return summedUpUserEntries;
         }
 
-        // turnierinfos für bestimmten user
+        /// ruft turnierinmfo für einen bestimmten user (der in aktivem turnier ist) ab
+        /// bestimmt tournament name von user, addiert und summed die data aller user des tournaments
+        /// + ermittelt teilnehmer mit höchster punktzahl, user mit highscore + starttime
         public TournamentInfoSchema GetTournamentInfo(string username)
         {
             string? tournamentName = _tournamentDao.GetActiveTournament(username);
+
             if (tournamentName == null)
             {
                 throw new NoTournamentException();
             }
+
             List<HistorySchema> summedUpEntries = RetrieveSummedUpUserEntriesInTournament(tournamentName);
+
             HistorySchema? userWithHighestCount = null;
+
             foreach (var entry in summedUpEntries)
             {
                 if (userWithHighestCount == null || entry.Count > userWithHighestCount.Count)
@@ -160,8 +198,10 @@ namespace SWEN_KOMP.BLL.Tournaments
                     userWithHighestCount = entry;
                 }
             }
+
             int participantCount = summedUpEntries.Count;
-            string leaderUsername = userWithHighestCount != null ? userWithHighestCount.Username : "";
+            string leaderUsername = userWithHighestCount != null ? userWithHighestCount.Username : ""; // user mit highscore zuordnen
+
             return new TournamentInfoSchema(participantCount, leaderUsername, _tournamentTimers[tournamentName].TournamentStart);
         }
     }
