@@ -22,15 +22,16 @@ using SWEN_KOMP.API.Routing.Tournaments;
 
 namespace SWEN_KOMP.API.Routing
 {
+    // router für http anfragen
     internal class Router : IRouter
     {
-        private readonly IdentityProvider _identityProvider;    //Neuer Manager --> access hier
+        private readonly IdentityProvider _identityProvider;
         private readonly IdRouteParser _routeParser;
         private readonly IUserManager _userManager;
         private readonly IScoreManager _scoreManager;
         private readonly ITournamentManager _tournamentManager;
 
-
+        // Konstruktor init
         public Router(IUserManager userManager, IScoreManager scoreManager, ITournamentManager tournamentManager)
         {
             _identityProvider = new IdentityProvider(userManager);
@@ -40,9 +41,10 @@ namespace SWEN_KOMP.API.Routing
             _tournamentManager = tournamentManager;
         }
 
-
+        // route anfragen lösen
         public IRouteCommand? Resolve(HttpRequest request)
         {
+            // route matching
             var isUsersMatch = (string path) => _routeParser.IsMatch(path, "/users/{id}");
             var isStatsMatch = (string path) => _routeParser.IsMatch(path, "/stats/{id}");
             var parseUsersId = (string path) => _routeParser.ParseParameters(path, "/users/{id}")["id"];
@@ -51,7 +53,9 @@ namespace SWEN_KOMP.API.Routing
 
             try
             {
-                return request switch {
+                // richtige command class für verschiedene pfade / methoden
+                return request switch
+                {
                     { Method: HttpMethod.Post, ResourcePath: "/users" } => new RegisterCommand(_userManager, _scoreManager, Deserialize<UserSchema>(request.Payload)),
                     { Method: HttpMethod.Post, ResourcePath: "/sessions" } => new LoginCommand(_userManager, Deserialize<UserSchema>(request.Payload)),
                     { Method: HttpMethod.Get, ResourcePath: var path } when isUsersMatch(path) => new GetUserDataCommand(_userManager, parseUsersId(path), GetIdentity(request)),
@@ -60,35 +64,28 @@ namespace SWEN_KOMP.API.Routing
                     { Method: HttpMethod.Get, ResourcePath: "/stats" } => new RetrieveUserStatsCommand(_scoreManager, GetIdentity(request)),
                     { Method: HttpMethod.Get, ResourcePath: "/score" } => new RetrieveScoreBoardCommand(_scoreManager, GetIdentity(request)),
                     { Method: HttpMethod.Post, ResourcePath: var path } when isStatsMatch(path) => new AddEloToUserCommand(_scoreManager, parseStatsId(path), GetIdentity(request), Deserialize<EloCheatSchema>(request.Payload)),
-                    // UNIQUE FEATURE -> ADD ELO TO USER POST /stats/{username} !!! ONLY ADMIN
 
                     { Method: HttpMethod.Get, ResourcePath: "/history" } => new RetrieveUserHistoryCommand(_tournamentManager, GetIdentity(request)),
                     { Method: HttpMethod.Get, ResourcePath: "/tournament" } => new ListCurrentTournamentInfoCommand(_tournamentManager, GetIdentity(request)),
                     { Method: HttpMethod.Post, ResourcePath: "/history" } => new AddHistoryEntryCommand(_tournamentManager, _scoreManager, GetIdentity(request), Deserialize<HistoryPayloadSchema>(request.Payload)),
-                   
-                    /*  { Method: HttpMeourcePath: var path } when isMatch(path) => new UpdateMessageCommand(_messageManager, GetIdentity(request), parseId(path), checkBody(request.Payload)),
-                    { Method: HttpMethod.Deletthod.Get, ResourcePath: "/messages" } => new ListMessagesCommand(_messageManager, GetIdentity(request)),
-
-                    { Method: HttpMethod.Get, ResourcePath: var path } when isMatch(path) => new ShowMessageCommand(_messageManager, GetIdentity(request), parseId(path)),
-                    { Method: HttpMethod.Put, Rese, ResourcePath: var path } when isMatch(path) => new RemoveMessageCommand(_messageManager, GetIdentity(request), parseId(path)),
-                    */
-
 
                     _ => null
-                } ;
+                };
             }
-            catch(InvalidDataException)
+            catch (InvalidDataException)
             {
-                return null;
-            }            
+                return null; // ungültige daten --> null
+            }
         }
 
+        // Deserialisieren des bodys
         private T Deserialize<T>(string? body) where T : class
         {
             var data = body is not null ? JsonConvert.DeserializeObject<T>(body) : null;
             return data ?? throw new InvalidDataException();
         }
 
+        // identity aus http anfrage extrahieren
         private UserSchema GetIdentity(HttpRequest request)
         {
             return _identityProvider.GetIdentityForRequest(request) ?? throw new RouteNotAuthenticatedException();

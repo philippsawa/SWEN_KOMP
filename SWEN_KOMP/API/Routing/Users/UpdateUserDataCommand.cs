@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace SWEN_KOMP.API.Routing.Users
 {
+    // user data aktualisieren
     internal class UpdateUserDataCommand : IRouteCommand
     {
         private readonly IUserManager _userManager;
@@ -18,6 +19,7 @@ namespace SWEN_KOMP.API.Routing.Users
         private readonly UserSchema _authUser;
         private readonly UserDataSchema _userData;
 
+        // Konstruktor init
         public UpdateUserDataCommand(IUserManager userManager, string username, UserSchema authUser, UserDataSchema userData)
         {
             _userManager = userManager;
@@ -32,19 +34,23 @@ namespace SWEN_KOMP.API.Routing.Users
 
             try
             {
-                if(_username != _authUser.Username && _username != "admin")
+                // auth prüfen
+                if (_username != _authUser.Username && _authUser.Username != "admin")
                 {
                     throw new UserNotAuthenticatedException();
                 }
+                // user daten aktualisieren
                 _userManager.EditUser(_userData, _username);
                 response = new HttpResponse(StatusCode.Ok);
             }
             catch (UserNotFoundException)
             {
+                // user not found
                 response = new HttpResponse(StatusCode.NotFound);
             }
-            catch(UserNotAuthenticatedException)
+            catch (UserNotAuthenticatedException)
             {
+                // nicht auth
                 response = new HttpResponse(StatusCode.Unauthorized);
             }
 

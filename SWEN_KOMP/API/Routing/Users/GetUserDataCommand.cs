@@ -12,12 +12,14 @@ using System.Threading.Tasks;
 
 namespace SWEN_KOMP.API.Routing.Users
 {
+    // user data aufruf
     internal class GetUserDataCommand : IRouteCommand
     {
         private readonly IUserManager _userManager;
         private readonly UserSchema _authUser;
         private readonly string _username;
 
+        // Konstruktor init
         public GetUserDataCommand(IUserManager userManager, string username, UserSchema user)
         {
             _userManager = userManager;
@@ -31,19 +33,26 @@ namespace SWEN_KOMP.API.Routing.Users
 
             try
             {
-                if(_authUser.Username != _username && _authUser.Username != "admin"){
+                // authentifizierungs check
+                if (_authUser.Username != _username && _authUser.Username != "admin")
+                {
                     throw new UserNotAuthenticatedException();
                 }
 
+                // daten abrufen
                 var userData = _userManager.GetUserData(_username);
+                // als JSON
                 var jsonPayload = JsonConvert.SerializeObject(userData);
                 response = new HttpResponse(StatusCode.Ok, jsonPayload);
             }
-            catch (UserNotAuthenticatedException){
+            catch (UserNotAuthenticatedException)
+            {
+                // nicht auth
                 response = new HttpResponse(StatusCode.Unauthorized);
             }
             catch (UserNotFoundException)
             {
+                // nicht gefunden
                 response = new HttpResponse(StatusCode.NotFound);
             }
 

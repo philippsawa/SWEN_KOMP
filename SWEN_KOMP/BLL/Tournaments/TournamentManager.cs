@@ -16,20 +16,20 @@ namespace SWEN_KOMP.BLL.Tournaments
     {
         private readonly ITournamentDao _tournamentDao;
         private readonly IScoreManager _scoreManager;
+        private ConcurrentDictionary<string, TournamentSchema> _tournamentTimers = new ConcurrentDictionary<string, TournamentSchema>();
 
-        private ConcurrentDictionary<string, Timer> _tournamentTimers = new ConcurrentDictionary<string, Timer>();
-
+        // konstruktor init
         public TournamentManager(ITournamentDao tournamentDao, IScoreManager scoreManager)
         {
             _tournamentDao = tournamentDao;
             _scoreManager = scoreManager;
         }
 
+        // startet ein turnier und legt timer für ablauf fest
         public void StartTournament(HistorySchema entry, string tournamentId)
         {
             if (string.IsNullOrWhiteSpace(tournamentId))
             {
-                Console.WriteLine("Tournament ID cannot be null or empty.");
                 throw new ArgumentException("Tournament ID cannot be null or empty.", nameof(tournamentId));
             }
 
@@ -40,100 +40,81 @@ namespace SWEN_KOMP.BLL.Tournaments
             else
             {
                 var timer = new Timer(TournamentTimerCallback, tournamentId, 10000, Timeout.Infinite);
-                if (_tournamentTimers.TryAdd(tournamentId, timer))
+                if (_tournamentTimers.TryAdd(tournamentId, new TournamentSchema(timer)))
                 {
-                    Console.WriteLine($"Tournament {tournamentId} started.");
                     _tournamentDao.AddHistoryEntry(entry, tournamentId);
                 }
                 else
                 {
-                    Console.WriteLine($"Failed to start tournament {tournamentId}. Please try again.");
                     throw new NoTournamentException();
                 }
             }
         }
+
+        // callback funktion für timer nach ablauf von turnier timer
         private void TournamentTimerCallback(object state)
         {
             var tournamentId = (string)state;
-
-            if (_tournamentTimers.TryRemove(tournamentId, out var timer))
+            if (_tournamentTimers.TryRemove(tournamentId, out var tournament))
             {
-                timer.Dispose();
+                tournament.Countdown.Dispose();
                 ProcessUsersInTournament(tournamentId); // +-elo
                 _tournamentDao.DeleteTournamentName(tournamentId);
             }
-
-            Console.WriteLine($"Tournament {tournamentId} has ended.");
         }
 
+        // processed turnierteilnehmer wenn turnier fertig ist
         private void ProcessUsersInTournament(string tournamentId)
         {
             var summedUpUserEntries = RetrieveSummedUpUserEntriesInTournament(tournamentId);
             if (summedUpUserEntries.Count == 0) return;
+
             List<HistorySchema> topUsers = new List<HistorySchema>();
-
             topUsers.Add(summedUpUserEntries[0]);
-
             for (int i = 1; i < summedUpUserEntries.Count; i++)
             {
                 var currentUser = summedUpUserEntries[i];
-
                 if (currentUser.Count > topUsers[0].Count)
                 {
-                    // wenn höher -> liste clearen und neuen user als highest speichern
                     topUsers.Clear();
                     topUsers.Add(currentUser);
                 }
                 else if (currentUser.Count == topUsers[0].Count)
                 {
-                    // wenn gleicher score -> beide in liste
                     topUsers.Add(currentUser);
                 }
             }
 
             var otherUsers = summedUpUserEntries.Except(topUsers).ToList();
-
             if (topUsers.Count == 1)
             {
-                // 1 gewinner
-                Console.WriteLine($"Winner: {topUsers[0].Username} with count: {topUsers[0].Count}");
                 _scoreManager.AddElo(2, topUsers[0].Username + "-sebToken");
             }
             else
             {
-                // >1 gewinner
-                Console.WriteLine("Multiple winners with equal counts:");
                 foreach (var user in topUsers)
                 {
-                    Console.WriteLine($"{user.Username} with count: {user.Count}");
                     _scoreManager.AddElo(1, user.Username + "-sebToken");
                 }
             }
-
-            // alle anderen user (verlierer)
-            if (otherUsers.Any())
+            foreach (var user in otherUsers)
             {
-                Console.WriteLine("Loser(s):");
-                foreach (var user in otherUsers)
-                {
-                    Console.WriteLine($"{user.Username} with count: {user.Count}");
-                    _scoreManager.SubtractElo(user.Username + "-sebToken");
-                }
+                _scoreManager.SubtractElo(user.Username + "-sebToken");
             }
         }
 
+        // Rruft alle einträge für einen user ab
         public List<HistorySchema> GetHistory(string username)
         {
             List<HistorySchema> history = _tournamentDao.RetrieveHistory(username);
-
-            if(history.Count == 0)
+            if (history.Count == 0)
             {
                 throw new EmptyHistoryException();
             }
-
             return history;
         }
 
+        // added turnier entries für alle teilnehmer in 1 turnier
         public List<HistorySchema> RetrieveSummedUpUserEntriesInTournament(string tournamentId)
         {
             List<HistorySchema> historyEntries = _tournamentDao.RetrieveTournament(tournamentId);
@@ -145,10 +126,8 @@ namespace SWEN_KOMP.BLL.Tournaments
                 if (!usersChecked.Contains(entry.Username))
                 {
                     usersChecked.Add(entry.Username);
-
                     int totalDuration = 0;
                     int totalCount = 0;
-
                     foreach (var innerEntry in historyEntries)
                     {
                         if (innerEntry.Username == entry.Username)
@@ -157,28 +136,23 @@ namespace SWEN_KOMP.BLL.Tournaments
                             totalDuration += innerEntry.Duration;
                         }
                     }
-
                     HistorySchema summedEntry = new HistorySchema(totalCount, totalDuration, entry.Username);
                     summedUpUserEntries.Add(summedEntry);
                 }
             }
-
             return summedUpUserEntries;
-        } 
+        }
 
+        // turnierinfos für bestimmten user
         public TournamentInfoSchema GetTournamentInfo(string username)
         {
             string? tournamentName = _tournamentDao.GetActiveTournament(username);
-
-            if(tournamentName == null)
+            if (tournamentName == null)
             {
                 throw new NoTournamentException();
             }
-
             List<HistorySchema> summedUpEntries = RetrieveSummedUpUserEntriesInTournament(tournamentName);
-
             HistorySchema? userWithHighestCount = null;
-
             foreach (var entry in summedUpEntries)
             {
                 if (userWithHighestCount == null || entry.Count > userWithHighestCount.Count)
@@ -186,11 +160,9 @@ namespace SWEN_KOMP.BLL.Tournaments
                     userWithHighestCount = entry;
                 }
             }
-
             int participantCount = summedUpEntries.Count;
             string leaderUsername = userWithHighestCount != null ? userWithHighestCount.Username : "";
-
-            return new TournamentInfoSchema(participantCount, leaderUsername, 60); // STARTTIME UMÄNDERN VON HARDCODE AUF DYNAMIC !!!! 
+            return new TournamentInfoSchema(participantCount, leaderUsername, _tournamentTimers[tournamentName].TournamentStart);
         }
     }
 }

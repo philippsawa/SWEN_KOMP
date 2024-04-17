@@ -12,11 +12,13 @@ using System.Threading.Tasks;
 
 namespace SWEN_KOMP.API.Routing.Tournaments
 {
+    // user history aufruf
     internal class RetrieveUserHistoryCommand : IRouteCommand
     {
         private readonly ITournamentManager _tournamentManager;
         private readonly UserSchema _user;
 
+        // Konstruktor init
         public RetrieveUserHistoryCommand(ITournamentManager tournamentManager, UserSchema user)
         {
             _tournamentManager = tournamentManager;
@@ -29,12 +31,15 @@ namespace SWEN_KOMP.API.Routing.Tournaments
 
             try
             {
+                // user history aufruf
                 List<HistorySchema> history = _tournamentManager.GetHistory(_user.Username);
+                // als JSON
                 var jsonPayload = JsonConvert.SerializeObject(history);
                 response = new HttpResponse(StatusCode.Ok, jsonPayload);
             }
             catch (EmptyHistoryException)
             {
+                // keine history
                 response = new HttpResponse(StatusCode.NoContent);
             }
 

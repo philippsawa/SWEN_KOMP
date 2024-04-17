@@ -29,11 +29,12 @@ namespace SWEN_KOMP.HttpServer
             _client = client;
         }
 
+        // received und parst http anfrage von einem tcpclient
         public HttpRequest? ReceiveRequest()
         {
             try
             {
-                // "using" keyword -> immediately dispose and when going out of scope, leaving the socket stream open for sending the response
+                // streamreader liest zeichen aus byte-stream
                 using var reader = new StreamReader(_client.GetStream(), leaveOpen: true);
 
                 Request.HttpMethod method = Request.HttpMethod.Get;
@@ -46,12 +47,14 @@ namespace SWEN_KOMP.HttpServer
                 ParseState state = ParseState.Base;
                 string? line;
 
+                // liest request zeile für zeile
                 while (!string.IsNullOrWhiteSpace(line = reader.ReadLine()))
                 {
                     line = line.Trim();
                     switch (state)
                     {
                         case ParseState.Base:
+                            // parst startzeile des requests
                             var baseInfo = line.Split(' ');
                             if (baseInfo.Length != 3)
                             {
@@ -65,6 +68,7 @@ namespace SWEN_KOMP.HttpServer
                             break;
 
                         case ParseState.Headers:
+                            // parst header des requests
                             var headerInfo = line.Split(':', 2);
                             if (headerInfo.Length != 2)
                             {
@@ -74,7 +78,7 @@ namespace SWEN_KOMP.HttpServer
                             var value = headerInfo[1].Trim();
                             header.Add(key, value);
 
-                            // special handling for content length, we need this for reading the payload
+                            // wenn content-length vorkommt --> payload handling
                             if (key == "Content-Length")
                             {
                                 try
@@ -90,20 +94,18 @@ namespace SWEN_KOMP.HttpServer
                     }
                 }
 
-                // we need this to tell the compiler that the nullables are not null in the following code
+                // checkt ob pfad und version vorhanden
                 if (path is null || version is null)
                 {
                     return null;
                 }
 
-                // check whether we need a payload step
+                // entscheidet ob payload erwartet wird
                 state = contentLength > 0 && header.ContainsKey("Content-Type") ? ParseState.Payload : ParseState.Finished;
 
                 if (state == ParseState.Payload)
                 {
-                    // in a more complete implementation, we should consider the content type (i.e. for receiving binary data)
-                    // we however only cover textual data
-
+                    // liest payload wenn content-length >0
                     var buffer = new char[contentLength];
                     var bytesReadTotal = reader.ReadBlock(buffer, 0, contentLength);
 
@@ -111,7 +113,7 @@ namespace SWEN_KOMP.HttpServer
                     {
                         throw new InvalidDataException();
                     }
-                    
+
                     payload = new string(buffer);
                     state = ParseState.Finished;
                 }
@@ -124,13 +126,12 @@ namespace SWEN_KOMP.HttpServer
             }
         }
 
+        // sendet http antwort an client
         public void SendResponse(HttpResponse response)
         {
-            // https://stackoverflow.com/questions/5757290/http-header-line-break-style
-            
-            // "using" keyword -> immediately dispose and close stream when going out of scope
             using var writer = new StreamWriter(_client.GetStream());
-            
+
+            // schreibt statuscode und den status der antwort
             writer.Write($"HTTP/1.1 {(int)response.StatusCode} {response.StatusCode}\r\n");
             if (!string.IsNullOrEmpty(response.Payload))
             {

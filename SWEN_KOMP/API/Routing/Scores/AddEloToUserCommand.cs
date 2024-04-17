@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace SWEN_KOMP.API.Routing.Scores
 {
+    // Add Elo zu einem User
     internal class AddEloToUserCommand : IRouteCommand
     {
         private readonly IScoreManager _scoreManager;
@@ -18,6 +19,7 @@ namespace SWEN_KOMP.API.Routing.Scores
         private readonly UserSchema _requestingUserSchema;
         private readonly EloCheatSchema _eloCheat;
 
+        // Konstruktor init
         public AddEloToUserCommand(IScoreManager scoreManager, string requestedUsername, UserSchema requestingUser, EloCheatSchema eloCheat)
         {
             _scoreManager = scoreManager;
@@ -32,17 +34,21 @@ namespace SWEN_KOMP.API.Routing.Scores
 
             try
             {
-                if(_requestingUserSchema.Token != "admin-sebToken")
+                // benutzer = Admin?
+                if (_requestingUserSchema.Token != "admin-sebToken")
                 {
                     throw new UserNotAuthenticatedException();
                 }
-                _scoreManager.AddElo(_eloCheat.EloAmountToAdd, _requestedUsername+"-sebToken");
+                // Fügt Elo hinzu (+sebtoken)
+                _scoreManager.AddElo(_eloCheat.EloAmountToAdd, _requestedUsername + "-sebToken");
                 response = new HttpResponse(StatusCode.Ok);
-            }catch (UserNotAuthenticatedException)
+            }
+            catch (UserNotAuthenticatedException)
             {
+                // Nicht Auth --> Error
                 response = new HttpResponse(StatusCode.Unauthorized);
             }
-            
+
             return response;
         }
     }

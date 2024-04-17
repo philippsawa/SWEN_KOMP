@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace SWEN_KOMP.API.Routing.Tournaments
 {
+    // Entry in history hinzufügen
     internal class AddHistoryEntryCommand : IRouteCommand
     {
         private readonly ITournamentManager _tournamentManager;
@@ -18,6 +19,7 @@ namespace SWEN_KOMP.API.Routing.Tournaments
         private readonly UserSchema _userSchema;
         private readonly HistoryPayloadSchema _historyPayloadSchema;
 
+        // Konstruktor init
         public AddHistoryEntryCommand(ITournamentManager tournamentManager, IScoreManager scoreManager, UserSchema userSchema, HistoryPayloadSchema historyPayloadSchema)
         {
             _tournamentManager = tournamentManager;
@@ -32,11 +34,15 @@ namespace SWEN_KOMP.API.Routing.Tournaments
 
             try
             {
+                // turnier start (mit historyschema)
                 _tournamentManager.StartTournament(new HistorySchema(_historyPayloadSchema.Count, _historyPayloadSchema.DurationInSeconds, _userSchema.Username), _historyPayloadSchema.Name);
+                // pushup count add
                 _scoreManager.AddPushUpCount(_historyPayloadSchema.Count, _userSchema.Token);
                 response = new HttpResponse(StatusCode.Ok);
-            } catch(Exception ex)
+            }
+            catch (Exception ex)
             {
+                // ex auf console ausgeben
                 Console.WriteLine(ex.Message);
                 response = new HttpResponse(StatusCode.BadRequest);
             }

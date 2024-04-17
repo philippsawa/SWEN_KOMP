@@ -12,11 +12,13 @@ using System.Threading.Tasks;
 
 namespace SWEN_KOMP.API.Routing.Scores
 {
+    // Stats für spezifischen user
     internal class RetrieveUserStatsCommand : IRouteCommand
     {
         private readonly IScoreManager _scoreManager;
         private readonly UserSchema _requestingUser;
 
+        // Konstruktor init
         public RetrieveUserStatsCommand(IScoreManager scoreManager, UserSchema requestingUser)
         {
             _scoreManager = scoreManager;
@@ -29,16 +31,19 @@ namespace SWEN_KOMP.API.Routing.Scores
 
             try
             {
+                // Stats abrufen mit token
                 var data = _scoreManager.GetSpecificUserStats(_requestingUser.Token);
+                // Daten als JSON
                 var jsonPayload = JsonConvert.SerializeObject(data);
                 response = new HttpResponse(StatusCode.Ok, jsonPayload);
             }
             catch (UserNotFoundException)
             {
+                // Benutzer nd gefunden
                 response = new HttpResponse(StatusCode.Unauthorized);
             }
 
-            return response; 
+            return response;
         }
     }
 }

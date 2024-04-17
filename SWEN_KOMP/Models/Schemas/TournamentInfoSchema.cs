@@ -10,9 +10,17 @@ namespace SWEN_KOMP.Models.Schemas
     {
         public int ParticipantCount { get; set; }
         public string LeaderUsername { get; set; }
-        public int StartTime { get; set; }
+        //public int StartTime { get; set; }
+        public DateTime StartTime { get; set; }
 
-        public TournamentInfoSchema(int participants, string leaderUsername, int startTime)
+        //public TournamentInfoSchema(int participants, string leaderUsername, int startTime)
+        //{
+        //    ParticipantCount = participants;
+        //    LeaderUsername = leaderUsername;
+        //    StartTime = startTime;
+        //}
+
+        public TournamentInfoSchema(int participants, string leaderUsername, DateTime startTime)
         {
             ParticipantCount = participants;
             LeaderUsername = leaderUsername;
