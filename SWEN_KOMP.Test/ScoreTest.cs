@@ -22,20 +22,20 @@ namespace SWEN_KOMP.Test
         [Test]
         public void InsertUserStats_CallsDaoInsertUserStats()
         {
-            // Arrange
+            // arrange
             string token = "authToken";
 
-            // Act
+            // act
             _scoreManager.InsertUserStats(token);
 
-            // Assert
+            // assert
             _mockScoreDao.Verify(dao => dao.InsertUserStats(token), Times.Once);
         }
 
         [Test]
         public void GetScoreboard_ReturnsListOfUserStats()
         {
-            // Arrange
+            // arrange
             var expectedScoreboard = new List<UserStatsSchema>
                 {
                     new UserStatsSchema("John", 150, 10),
@@ -44,38 +44,38 @@ namespace SWEN_KOMP.Test
 
             _mockScoreDao.Setup(dao => dao.GetScoreboard()).Returns(expectedScoreboard);
 
-            // Act
+            // act
             var result = _scoreManager.GetScoreboard();
 
-            // Assert
+            // assert
             Assert.AreEqual(expectedScoreboard, result);
         }
 
         [Test]
         public void GetSpecificUserStats_WhenUserExists_ReturnsUserStats()
         {
-            // Arrange
+            // arrange
             var expectedStats = new UserStatsSchema("John", 150, 10);
             _mockScoreDao.Setup(dao => dao.GetUserStatsSchema("authToken")).Returns(expectedStats);
 
-            // Act
+            // act
             var result = _scoreManager.GetSpecificUserStats("authToken");
 
-            // Assert
+            // assert
             Assert.AreEqual(expectedStats, result);
         }
 
         [Test]
         public void AddElo_CallsDaoAddEloWithCorrectAmount()
         {
-            // Arrange
+            // arrange
             string authToken = "authToken";
             int amount = 10;
 
-            // Act
+            // act
             _scoreManager.AddElo(amount, authToken);
 
-            // Assert
+            // assert
             _mockScoreDao.Verify(dao => dao.AddElo(amount, authToken), Times.Once);
         }
 

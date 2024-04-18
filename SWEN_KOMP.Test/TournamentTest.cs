@@ -30,26 +30,26 @@ namespace SWEN_KOMP.Test
         [Test]
         public void GetHistory_WithNoHistory_ThrowsEmptyHistoryException()
         {
-            // Arrange
+            // arrange
             string username = "nonexistentuser";
             _mockTournamentDao.Setup(dao => dao.RetrieveHistory(username)).Returns(new List<HistorySchema>());
 
-            // Act & Assert
+            // act und assert
             Assert.Throws<EmptyHistoryException>(() => _tournamentManager.GetHistory(username));
         }
 
         [Test]
         public void GetHistory_WithHistory_ReturnsHistory()
         {
-            // Arrange
+            // arrange
             string username = "testuser";
             var history = new List<HistorySchema> { new HistorySchema(10, 120, username) };
             _mockTournamentDao.Setup(dao => dao.RetrieveHistory(username)).Returns(history);
 
-            // Act
+            // act
             var result = _tournamentManager.GetHistory(username);
 
-            // Assert
+            // assert
             Assert.IsNotNull(result);
             Assert.AreEqual(1, result.Count);
             Assert.AreEqual(username, result[0].Username);

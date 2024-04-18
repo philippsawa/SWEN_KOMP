@@ -27,7 +27,7 @@ namespace SWEN_KOMP.Test
             _mockUserDao.Setup(m => m.UserInsertion(It.IsAny<UserSchema>())).Returns(true);
             var newUser = new UserSchema("testusr", "testpwd");
 
-            // act and assert
+            // act und assert
             Assert.DoesNotThrow(() => _userManager.RegisterUser(newUser));
         }
 
@@ -38,18 +38,18 @@ namespace SWEN_KOMP.Test
             _mockUserDao.Setup(m => m.UserInsertion(It.IsAny<UserSchema>())).Returns(false);
             var existingUser = new UserSchema("testusr", "testpwd");
 
-            // act and assert
+            // act und assert
             Assert.Throws<DuplicateUserException>(() => _userManager.RegisterUser(existingUser));
         }
 
         [Test]
         public void LoginWithValidCredentialsDoesNotThrowException()
         {
-            // Arrange
+            // arrange
             var userCredentials = new UserSchema("testusr", "testpwd");
             _mockUserDao.Setup(m => m.UserLogin(userCredentials)).Returns(true); // gültige credentials
 
-            // Act & Assert
+            // act und assert
             Assert.DoesNotThrow(() => _userManager.LoginUser(userCredentials),
                 "Login should succeed and not throw an exception with valid credentials.");
 
@@ -60,11 +60,11 @@ namespace SWEN_KOMP.Test
         [Test]
         public void LoginWithInvalidCredentialsThrowsUserNotFoundException()
         {
-            // Arrange
+            // arrange
             var userCredentials = new UserSchema("testusr", "testpwd");
             _mockUserDao.Setup(m => m.UserLogin(userCredentials)).Returns(false); // ungültige credentials
 
-            // Act & Assert
+            // act und assert
             Assert.Throws<UserNotFoundException>(() => _userManager.LoginUser(userCredentials),
                 "Login should throw UserNotFoundException with invalid credentials.");
 
